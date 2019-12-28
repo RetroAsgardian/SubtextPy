@@ -18,7 +18,7 @@ class BoardEncryption(Enum): pass
 class Board: pass
 class Message: pass
 
-# End header
+# End Header
 
 class SubtextObj:
 	"""
