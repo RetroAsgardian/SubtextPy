@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SubtextPy.model
+subtext.model
 """
 from enum import Enum
 from uuid import UUID
