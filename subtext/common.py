@@ -85,3 +85,16 @@ class Context:
 		Send an HTTP DELETE request.
 		"""
 		return self._request('DELETE', url, **kwargs)
+
+class SubtextObj:
+	"""
+	An object that exists on a Subtext instance, represented by a UUID.
+	"""
+	def __init__(self, id: UUID, ctx: Optional[Context] = None):
+		self.id = id
+		self.ctx = ctx
+	def refresh(self):
+		"""
+		Update this object with the latest data from the Subtext instance.
+		"""
+		raise NotImplementedError()

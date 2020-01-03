@@ -2,11 +2,14 @@
 """
 subtext - Official Python client API for Subtext.
 """
-from .common import APIError, ContextError, Context
+from .common import APIError, ContextError, Context, SubtextObj
+from .user import User
+
 from uuid import UUID
 from datetime import datetime
-from typing import Optional, Union
 import iso8601
+
+from typing import Optional, Union
 
 class Client:
 	"""
@@ -42,6 +45,14 @@ class Client:
 		self.ctx._session_id = session_id
 		self.ctx._user_id = user_id
 	
+	def heartbeat(self):
+		"""
+		Keep the current session alive.
+		"""
+		self.ctx.post('/Subtext/user/heartbeat', params={
+			'sessionId': self.ctx.session_id()
+		})
+	
 	def logout(self):
 		"""
 		Log out of the current session.
@@ -52,3 +63,11 @@ class Client:
 		
 		self.ctx._session_id = None
 		self.ctx._user_id = None
+	
+	def get_user(self, user_id: Optional[UUID] = None):
+		"""
+		Retrieve a user. If a user ID is not given, it defaults to retrieving the logged in user.
+		"""
+		user = User(user_id or self.ctx.user_id(), self.ctx)
+		user.refresh()
+		return user
