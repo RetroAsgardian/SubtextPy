@@ -3,7 +3,9 @@
 subtext - Official Python client API for Subtext.
 """
 from .common import APIError, ContextError, Context, SubtextObj
-from .user import User
+from .user import User, UserPresence
+from .key import Key
+from .board import Board, BoardEncryption
 
 from uuid import UUID
 from datetime import datetime
@@ -71,3 +73,36 @@ class Client:
 		user = User(user_id or self.ctx.user_id(), self.ctx)
 		user.refresh()
 		return user
+	
+	def get_boards(self):
+		"""
+		Retrieve all boards visible to the logged in user. (This is an iterator.)
+		"""
+		ids = set()
+		start = 0
+		while True:
+			resp = self.ctx.get("/Subtext/board", params={
+				'sessionId': self.ctx.session_id(),
+				'start': start
+			}).json()
+			start += len(resp)
+			if len(resp) <= 0:
+				break
+			for board in resp:
+				if board['id'] not in ids:
+					ids.add(board['id'])
+					yield Board(UUID(board['id']), self.ctx,
+						name=board['name'],
+						owner=User(UUID(board['owner'])),
+						encryption=BoardEncryption(board['encryption']),
+						last_update=iso8601.parse_date(board['last_update']),
+						last_significant_update=iso8601.parse_date(board['last_significant_update'])
+					)
+	
+	def get_board(self, board_id: UUID):
+		"""
+		Retrieve a board.
+		"""
+		board = Board(board_id)
+		board.refresh()
+		return board

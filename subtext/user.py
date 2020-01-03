@@ -30,11 +30,6 @@ class User(SubtextObj):
 		self.status = None
 		
 		self.is_deleted = None
-		
-		self.friends = None
-		self.blocked = None
-		self.friend_requests = None
-		self.keys = None
 	def refresh(self):
 		resp = self.ctx.get("/Subtext/user/{}".format(self.id), params={
 			'sessionId': self.ctx.session_id()
@@ -47,74 +42,25 @@ class User(SubtextObj):
 		self.status = resp.get('status', None)
 		
 		self.is_deleted = resp.get('isDeleted', None)
-		
-		self.friends = None
-		self.blocked = None
-		self.friend_requests = None
-		
-		if self.id == self.ctx.user_id():
-			# Get friend list
-			id_list = []
-			start = 0
-			while True:
-				resp = self.ctx.get("/Subtext/user/{}/friends".format(self.id), params={
-					'sessionId': self.ctx.session_id(),
-					'start': start
-				}).json()
-				start += len(resp)
-				if len(resp) <= 0:
-					break
-				for user_id in resp:
-					if user_id not in id_list:
-						friend_ids.append(user_id)
-			self.friends = [User(user_id, self.ctx) for user_id in id_list]
-			
-			# Get block list
-			id_list = []
-			start = 0
-			while True:
-				resp = self.ctx.get("/Subtext/user/{}/blocked".format(self.id), params={
-					'sessionId': self.ctx.session_id(),
-					'start': start
-				}).json()
-				start += len(resp)
-				if len(resp) <= 0:
-					break
-				for user_id in resp:
-					if user_id not in id_list:
-						id_list.append(user_id)
-			self.blocked = [User(user_id, self.ctx) for user_id in id_list]
-			
-			# Get friend request list
-			id_list = []
-			start = 0
-			while True:
-				resp = self.ctx.get("/Subtext/user/{}/friendrequests".format(self.id), params={
-					'sessionId': self.ctx.session_id(),
-					'start': start
-				}).json()
-				start += len(resp)
-				if len(resp) <= 0:
-					break
-				for user_id in resp:
-					if user_id not in id_list:
-						id_list.append(user_id)
-			self.friend_requests = [User(user_id, self.ctx) for user_id in id_list]
-		
-		# Get public key list
-		self.keys = []
+	
+	def get_friends(self):
+		"""
+		Retrieve this user's friends. (This is an iterator.)
+		"""
+		ids = set()
 		start = 0
 		while True:
-			resp = self.ctx.get("/Subtext/user/{}/keys".format(self.id), params={
+			resp = self.ctx.get("/Subtext/user/{}/friends".format(self.id), params={
 				'sessionId': self.ctx.session_id(),
 				'start': start
 			}).json()
 			start += len(resp)
 			if len(resp) <= 0:
 				break
-			for key in resp:
-				if not any(x for x in self.keys if x.id == key['id']):
-					self.keys.append(Key(UUID(key['id']), self.ctx, publish_time=iso8601.parse_date(key['publishTime'])))
+			for friend_id in resp:
+				if friend_id not in ids:
+					ids.add(friend_id)
+					yield User(UUID(friend_id), self.ctx)
 	
 	def unfriend(self):
 		"""
@@ -123,6 +69,25 @@ class User(SubtextObj):
 		self.ctx.delete("/Subtext/user/{}/friends/{}".format(self.ctx.user_id(), self.id), params={
 			'sessionId': self.ctx.session_id()
 		})
+	
+	def get_blocked(self):
+		"""
+		Retrieve this user's blocked users. (This is an iterator.)
+		"""
+		ids = set()
+		start = 0
+		while True:
+			resp = self.ctx.get("/Subtext/user/{}/blocked".format(self.id), params={
+				'sessionId': self.ctx.session_id(),
+				'start': start
+			}).json()
+			start += len(resp)
+			if len(resp) <= 0:
+				break
+			for blocked_id in resp:
+				if blocked_id not in ids:
+					ids.add(blocked_id)
+					yield User(UUID(blocked_id), self.ctx)
 	
 	def block(self):
 		"""
@@ -140,6 +105,25 @@ class User(SubtextObj):
 		self.ctx.delete("/Subtext/user/{}/blocked/{}".format(self.ctx.user_id(), self.id), params={
 			'sessionId': self.ctx.session_id()
 		})
+	
+	def get_friend_requests(self):
+		"""
+		Retrieve this user's friend requests. (This is an iterator.)
+		"""
+		ids = set()
+		start = 0
+		while True:
+			resp = self.ctx.get("/Subtext/user/{}/friendrequests".format(self.id), params={
+				'sessionId': self.ctx.session_id(),
+				'start': start
+			}).json()
+			start += len(resp)
+			if len(resp) <= 0:
+				break
+			for sender_id in resp:
+				if sender_id not in ids:
+					ids.add(sender_id)
+					yield User(UUID(sender_id), self.ctx)
 	
 	def send_friend_request(self):
 		"""
@@ -164,6 +148,25 @@ class User(SubtextObj):
 		self.ctx.delete("/Subtext/user/{}/friendrequests/{}".format(self.ctx.user_id(), self.id), params={
 			'sessionId': self.ctx.session_id()
 		})
+	
+	def get_keys(self):
+		"""
+		Retrieve this user's public keys. (This is an iterator.)
+		"""
+		ids = set()
+		start = 0
+		while True:
+			resp = self.ctx.get("/Subtext/user/{}/keys".format(self.id), params={
+				'sessionId': self.ctx.session_id(),
+				'start': start
+			}).json()
+			start += len(resp)
+			if len(resp) <= 0:
+				break
+			for key in resp:
+				if key['id'] not in ids:
+					ids.add(key['id'])
+					yield Key(UUID(key['id']), self.ctx, publish_time=iso8601.parse_date(key['publishTime']))
 	
 	def add_key(self, data: bytes):
 		"""
