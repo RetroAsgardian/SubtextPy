@@ -207,4 +207,6 @@ class User(SubtextObj):
 			'sessionId': self.ctx.session_id(),
 			'recipientId': self.id
 		})
-		return Board(UUID(resp.json()), self.ctx)
+		board = Board(UUID(resp.json()), self.ctx)
+		board.refresh()
+		return board
