@@ -17,7 +17,10 @@ class Key(SubtextObj): pass
 from .user import User
 
 class Key(SubtextObj):
-	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, publish_time: Optional[datetime] = None, owner: Optional[User] = None):
+	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,
+		publish_time: Optional[datetime] = None,
+		owner: Optional[User] = None
+	):
 		super().__init__(id, ctx)
 		
 		self.publish_time = publish_time

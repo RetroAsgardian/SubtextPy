@@ -4,6 +4,9 @@ subtext.content
 """
 import hashlib
 import struct
+
+from uuid import UUID
+
 from typing import Optional
 
 class Content:
@@ -12,18 +15,23 @@ class Content:
 	"""
 	def from_bytes(self, data: bytes):
 		"""
-		Convert from raw message bytes.
+		Deserialize content from raw bytes.
 		"""
 		raise NotImplementedError()
 	def to_bytes(self) -> bytes:
 		"""
-		Convert to raw message bytes.
+		Serialize content to raw bytes.
 		"""
 		raise NotImplementedError()
+	def canon_type(self) -> Optional[str]:
+		"""
+		Get the canonical message type for this content.
+		"""
+		return None
 
 class FallbackContent(Content):
 	"""
-	If nothing else matches.
+	Fallback content type, used if no other suitable type is found.
 	"""
 	def __init__(self, *, data: Optional[bytes] = None):
 		self.data = data
@@ -42,6 +50,8 @@ class TextContent(Content):
 		self.text = data.decode('utf-8')
 	def to_bytes(self) -> bytes:
 		return self.text.encode('utf-8')
+	def canon_type(self) -> Optional[str]:
+		return "TextMessage"
 
 class FileContent(Content):
 	"""
@@ -105,4 +115,32 @@ class FileContent(Content):
 		sha256.update(self.data)
 		if sha256.digest() != digest:
 			raise ValueError("Hash mismatch")
-		
+	def canon_type(self) -> Optional[str]:
+		return "FileMessage"
+
+class MemberContent(Content):
+	"""
+	Indicates that a member has been added or removed.
+	"""
+	def __init__(self, *, user_id: Optional[UUID] = None):
+		self.user_id = user_id
+	def to_bytes(self) -> bytes:
+		return str(self.user_id).encode('utf-8')
+	def from_bytes(self, data: bytes):
+		self.user_id = UUID(data.decode('utf-8'))
+
+def parse_content(type: str, data: bytes) -> Content:
+	"""
+	Convert message data into a Content object based on the given type.
+	"""
+	if type == "Message" or type == "TextMessage":
+		content = TextContent()
+	elif type == "FileMessage":
+		content = FileContent()
+	elif type == "AddMember" or type == "RemoveMember":
+		content = MemberContent()
+	else:
+		content = FallbackContent()
+	
+	content.from_bytes(data)
+	return content

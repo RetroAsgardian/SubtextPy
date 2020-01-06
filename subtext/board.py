@@ -3,10 +3,12 @@
 subtext.board
 """
 from .common import Context, SubtextObj
+from .content import Content, parse_content
 
 from uuid import UUID
 from datetime import datetime
 import iso8601
+import json
 
 from enum import Enum
 from typing import Optional
@@ -24,7 +26,13 @@ class BoardEncryption(Enum):
 	none = "None"
 
 class Board(SubtextObj):
-	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, name: Optional[str] = None, owner: Optional[User] = None, encryption: Optional[BoardEncryption] = None, last_update: Optional[datetime] = None, last_significant_update: Optional[datetime] = None):
+	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,
+		name: Optional[str] = None,
+		owner: Optional[User] = None,
+		encryption: Optional[BoardEncryption] = None,
+		last_update: Optional[datetime] = None,
+		last_significant_update: Optional[datetime] = None
+	):
 		super().__init__(id, ctx)
 		
 		self.name = name
@@ -79,7 +87,7 @@ class Board(SubtextObj):
 			'sessionId': self.ctx.session_id(),
 			'userId': user.id
 		})
-	def get_messages(self, *, msg_type: Optional[str] = None, only_system: bool = False, page_size: Optional[int] = None):
+	def get_messages(self, *, type: Optional[str] = None, only_system: bool = False, page_size: Optional[int] = None):
 		"""
 		Retrieve this board's messages. (This is an iterator.)
 		"""
@@ -90,7 +98,7 @@ class Board(SubtextObj):
 				'sessionId': self.ctx.session_id(),
 				'start': start,
 				'count': page_size,
-				'type': msg_type,
+				'type': type,
 				'onlySystem': only_system
 			}).json()
 			start += len(resp)
@@ -100,16 +108,35 @@ class Board(SubtextObj):
 				if message['id'] not in ids:
 					ids.add(message['id'])
 					yield Message(UUID(message['id']), self.ctx,
+						board=self,
 						timestamp=iso8601.parse_date(message['timestamp']),
 						author=User(UUID(message['authorId'])),
 						is_system=message['isSystem'],
 						type=message['type'],
 						content=message['content']
 					)
+	def send_message(self, content: Content, *, type: Optional[str] = None, is_system: bool = False):
+		"""
+		Send a message to this board.
+		"""
+		self.ctx.post("/Subtext/board/{}/messages".format(self.id), params={
+			'sessionId': self.ctx.session_id(),
+			'isSystem': is_system,
+			'type': type or content.canon_type()
+		}, data=content.to_bytes())
 
 class Message(SubtextObj):
-	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, timestamp: Optional[datetime] = None, author: Optional[User] = None, is_system: Optional[bool] = None, type: Optional[str] = None, content: Optional[bytes] = None):
+	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,
+		board: Optional[Board] = None,
+		timestamp: Optional[datetime] = None,
+		author: Optional[User] = None,
+		is_system: Optional[bool] = None,
+		type: Optional[str] = None,
+		content: Optional[Content] = None
+	):
 		super().__init__(id, ctx)
+		
+		self.board = board
 		
 		self.timestamp = timestamp
 		self.author = author
@@ -119,4 +146,15 @@ class Message(SubtextObj):
 		
 		self.content = content
 	def refresh(self):
-		pass
+		resp = self.ctx.get("/Subtext/board/{}/messages/{}".format(self.board.id, self.id), params={
+			'sessionId': self.ctx.session_id()
+		})
+		
+		if 'X-Metadata' in resp.headers:
+			metadata = json.loads(resp.headers['X-Metadata'])
+			self.timestamp = iso8601.parse_date(metadata['timestamp'])
+			self.author = User(UUID(metadata['authorId']))
+			self.is_system = metadata['isSystem']
+			self.type = metadata['type']
+		
+		self.content = parse_content(self.type, resp.content)
