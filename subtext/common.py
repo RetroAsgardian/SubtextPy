@@ -5,15 +5,124 @@ subtext.common
 import requests
 from uuid import UUID
 from typing import Optional
+import iso8601
+import re
+
+# https://stackoverflow.com/a/1176023 - camelCase to snake_case
+_RE_SNAKE_CASE = re.compile(r'(?<!^)(?=[A-Z])')
+def snake_case(name: str) -> str:
+	"""
+	Convert camelCase or PascalCase into snake_case
+	"""
+	return _RE_SNAKE_CASE.sub('_', name).lower()
 
 class APIError(Exception):
 	"""
 	Generic API error.
 	"""
-	def __init__(self, message: str, status_code: int, **other_data):
+	def __init__(self, message: str, status_code: int, **data):
 		self.message = message
 		self.status_code = status_code
-		self.other_data = other_data
+		self.__dict__.update({snake_case(key): data[key] for key in data})
+
+class AuthError(APIError):
+	"""
+	Generic authentication error.
+	"""
+
+class AdminLoggedIn(APIError):
+	"""
+	Admin already has an active session elsewhere.
+	"""
+
+class AdminLoggedOut(APIError):
+	"""
+	Admin has logged out.
+	"""
+
+class IncorrectResponse(APIError):
+	"""
+	Incorrect response was given for admin challenge-response login.
+	"""
+
+class UserLocked(APIError):
+	"""
+	User account is locked.
+	"""
+	def __init__(self, message: str, status_code: int, **data):
+		super().__init__(message, status_code, **data)
+		self.lock_expiry = iso8601.parse_date(self.lock_expiry)
+
+class SessionExpired(APIError):
+	"""
+	Session has expired.
+	"""
+
+class NoObjectWithId(APIError):
+	"""
+	Object does not exist on the server.
+	"""
+
+class ObjectDeleted(APIError):
+	"""
+	Object is marked as deleted, action may not be executed on it.
+	"""
+
+class NotAuthorized(APIError):
+	"""
+	User or admin is not authorized to perform this action.
+	"""
+
+class InvalidRequest(APIError):
+	"""
+	Request is invalid.
+	"""
+
+class NameTaken(APIError):
+	"""
+	User or board name is taken.
+	"""
+
+class NameInvalid(APIError):
+	"""
+	User or board name is not valid.
+	"""
+
+class PasswordInsecure(APIError):
+	"""
+	Password does not fulfill server requirements.
+	"""
+
+class AlreadyBlocked(APIError):
+	"""
+	You have already blocked this user.
+	"""
+
+class AlreadyFriends(APIError):
+	"""
+	You are already friends with this user.
+	"""
+
+class AlreadySent(APIError):
+	"""
+	You have already sent a friend request to this user.
+	"""
+
+class AlreadyAdded(APIError):
+	"""
+	User is already added to the board.
+	"""
+
+class NotFriends(APIError):
+	"""
+	You are not friends with this user.
+	"""
+
+def api_error(message: str, status_code: int, **data) -> APIError:
+	"""
+	Construct an APIError or one of its subclasses.
+	"""
+	return APIError(message, status_code, **data)
 
 class ContextError(Exception):
 	"""
@@ -54,9 +163,9 @@ class Context:
 			if resp.headers.get('Content-Type', None) == 'application/json':
 				errdata = resp.json()
 				errmsg = errdata.pop('error')
-				raise APIError(errmsg, resp.status_code, **errdata)
+				raise api_error(errmsg, resp.status_code, **errdata)
 			else:
-				raise APIError(resp.text, resp.status_code)
+				raise api_error(None, resp.status_code, text=resp.text)
 		
 		return resp
 	
