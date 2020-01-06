@@ -4,14 +4,19 @@ subtext.user
 """
 from .common import Context, SubtextObj
 
-from .key import Key
-
 from uuid import UUID
 from datetime import datetime
 import iso8601
 
 from enum import Enum
 from typing import Optional
+
+# HEADER
+class UserPresence(Enum): pass
+class User(SubtextObj): pass
+
+from .key import Key
+from .board import Board
 
 class UserPresence(Enum):
 	online = "Online"
@@ -43,7 +48,7 @@ class User(SubtextObj):
 		
 		self.is_deleted = resp.get('isDeleted', None)
 	
-	def get_friends(self):
+	def get_friends(self, *, page_size: Optional[int] = None):
 		"""
 		Retrieve this user's friends. (This is an iterator.)
 		"""
@@ -52,7 +57,8 @@ class User(SubtextObj):
 		while True:
 			resp = self.ctx.get("/Subtext/user/{}/friends".format(self.id), params={
 				'sessionId': self.ctx.session_id(),
-				'start': start
+				'start': start,
+				'count': page_size
 			}).json()
 			start += len(resp)
 			if len(resp) <= 0:
@@ -70,7 +76,7 @@ class User(SubtextObj):
 			'sessionId': self.ctx.session_id()
 		})
 	
-	def get_blocked(self):
+	def get_blocked(self, *, page_size: Optional[int] = None):
 		"""
 		Retrieve this user's blocked users. (This is an iterator.)
 		"""
@@ -79,7 +85,8 @@ class User(SubtextObj):
 		while True:
 			resp = self.ctx.get("/Subtext/user/{}/blocked".format(self.id), params={
 				'sessionId': self.ctx.session_id(),
-				'start': start
+				'start': start,
+				'count': page_size
 			}).json()
 			start += len(resp)
 			if len(resp) <= 0:
@@ -106,7 +113,7 @@ class User(SubtextObj):
 			'sessionId': self.ctx.session_id()
 		})
 	
-	def get_friend_requests(self):
+	def get_friend_requests(self, *, page_size: Optional[int] = None):
 		"""
 		Retrieve this user's friend requests. (This is an iterator.)
 		"""
@@ -115,7 +122,8 @@ class User(SubtextObj):
 		while True:
 			resp = self.ctx.get("/Subtext/user/{}/friendrequests".format(self.id), params={
 				'sessionId': self.ctx.session_id(),
-				'start': start
+				'start': start,
+				'count': page_size
 			}).json()
 			start += len(resp)
 			if len(resp) <= 0:
@@ -149,7 +157,7 @@ class User(SubtextObj):
 			'sessionId': self.ctx.session_id()
 		})
 	
-	def get_keys(self):
+	def get_keys(self, *, page_size: Optional[int] = None):
 		"""
 		Retrieve this user's public keys. (This is an iterator.)
 		"""
@@ -158,7 +166,8 @@ class User(SubtextObj):
 		while True:
 			resp = self.ctx.get("/Subtext/user/{}/keys".format(self.id), params={
 				'sessionId': self.ctx.session_id(),
-				'start': start
+				'start': start,
+				'count': page_size
 			}).json()
 			start += len(resp)
 			if len(resp) <= 0:
@@ -166,7 +175,10 @@ class User(SubtextObj):
 			for key in resp:
 				if key['id'] not in ids:
 					ids.add(key['id'])
-					yield Key(UUID(key['id']), self.ctx, publish_time=iso8601.parse_date(key['publishTime']), owner=self)
+					yield Key(UUID(key['id']), self.ctx,
+						publish_time=iso8601.parse_date(key['publishTime']),
+						owner=self
+					)
 	
 	def add_key(self, data: bytes):
 		"""
