@@ -4,8 +4,6 @@ subtext.key
 """
 from .common import Context, SubtextObj
 
-from .user import User
-
 from uuid import UUID
 from datetime import datetime
 import iso8601
@@ -14,12 +12,10 @@ import json
 from typing import Optional
 
 class Key(SubtextObj):
-	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, publish_time: Optional[datetime] = None, owner: Optional[User] = None):
+	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, publish_time: Optional[datetime] = None):
 		super().__init__(id, ctx)
 		
 		self.publish_time = publish_time
-		
-		self.owner = owner
 		
 		self.data = None
 	def refresh(self):
@@ -29,8 +25,5 @@ class Key(SubtextObj):
 		
 		if 'X-Metadata' in resp.headers:
 			metadata = json.loads(resp.headers['X-Metadata'])
-			
-			if self.owner is None or self.owner.id != UUID(metadata['ownerId']):
-				self.owner = User(UUID(metadata['ownerId']), self.ctx)
 			
 			self.publish_time = iso8601.parse_date(metadata['publishTime'])
