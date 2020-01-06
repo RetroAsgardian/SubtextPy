@@ -96,8 +96,9 @@ class Client:
 						name=board['name'],
 						owner=User(UUID(board['owner'])),
 						encryption=BoardEncryption(board['encryption']),
-						last_update=iso8601.parse_date(board['last_update']),
-						last_significant_update=iso8601.parse_date(board['last_significant_update'])
+						last_update=iso8601.parse_date(board['lastUpdate']),
+						last_significant_update=iso8601.parse_date(board['lastSignificantUpdate']),
+						is_direct=board['isDirect']
 					)
 	
 	def get_board(self, board_id: UUID):
