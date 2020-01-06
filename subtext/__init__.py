@@ -2,7 +2,8 @@
 """
 subtext - Official Python client API for Subtext.
 """
-from .common import APIError, ContextError, Context, SubtextObj
+from .common import ContextError, Context, SubtextObj
+from .error import *
 from .user import User, UserPresence
 from .key import Key
 from .board import Board, BoardEncryption

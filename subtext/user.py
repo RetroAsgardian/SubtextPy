@@ -2,7 +2,7 @@
 """
 subtext.user
 """
-from .common import APIError, ContextError, Context, SubtextObj
+from .common import Context, SubtextObj
 
 from .key import Key
 
@@ -11,7 +11,7 @@ from datetime import datetime
 import iso8601
 
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 class UserPresence(Enum):
 	online = "Online"

@@ -2,7 +2,7 @@
 """
 subtext.key
 """
-from .common import APIError, ContextError, Context, SubtextObj
+from .common import Context, SubtextObj
 
 from .user import User
 
@@ -11,7 +11,7 @@ from datetime import datetime
 import iso8601
 import json
 
-from typing import Optional, Union
+from typing import Optional
 
 class Key(SubtextObj):
 	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, publish_time: Optional[datetime] = None, owner: Optional[User] = None):

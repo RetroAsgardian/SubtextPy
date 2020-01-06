@@ -6,7 +6,7 @@ import requests
 from uuid import UUID
 from typing import Optional
 
-from .error import *
+from .error import api_error
 
 class ContextError(Exception):
 	"""
