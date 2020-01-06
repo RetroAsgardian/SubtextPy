@@ -103,6 +103,6 @@ class Client:
 		"""
 		Retrieve a board.
 		"""
-		board = Board(board_id)
+		board = Board(board_id, self.ctx)
 		board.refresh()
 		return board
