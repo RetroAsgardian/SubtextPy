@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-subtext.message
+subtext.content
 """
 import hashlib
 import struct
@@ -20,6 +20,17 @@ class Content:
 		Convert to raw message bytes.
 		"""
 		raise NotImplementedError()
+
+class FallbackContent(Content):
+	"""
+	If nothing else matches.
+	"""
+	def __init__(self, *, data: Optional[bytes] = None):
+		self.data = data
+	def from_bytes(self, data: bytes):
+		self.data = data
+	def to_bytes(self) -> bytes:
+		return self.data
 
 class TextContent(Content):
 	"""

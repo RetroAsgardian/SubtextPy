@@ -106,3 +106,17 @@ class Board(SubtextObj):
 						type=message['type'],
 						content=message['content']
 					)
+
+class Message(SubtextObj):
+	def __init__(self, id: UUID, ctx: Optional[Context] = None, *, timestamp: Optional[datetime] = None, author: Optional[User] = None, is_system: Optional[bool] = None, type: Optional[str] = None, content: Optional[bytes] = None):
+		super().__init__(id, ctx)
+		
+		self.timestamp = timestamp
+		self.author = author
+		
+		self.is_system = is_system
+		self.type = type
+		
+		self.content = content
+	def refresh(self):
+		pass
