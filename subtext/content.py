@@ -66,11 +66,11 @@ class FileContent(Content):
 		
 		# Name
 		header.extend(self.name.encode('utf-8'))
-		header.extend(b'\x00')
+		header.append(0x00)
 		
 		# Type
 		header.extend(self.type.encode('utf-8'))
-		header.extend(b'\x00')
+		header.append(0x00)
 		
 		# Size
 		header.extend(struct.pack('>i', len(self.data)))
