@@ -7,6 +7,7 @@ from .error import *
 from .user import User, UserPresence
 from .key import Key
 from .board import Board, BoardEncryption
+from .encryption import Encryption
 
 from uuid import UUID
 from datetime import datetime
