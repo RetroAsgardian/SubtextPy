@@ -15,33 +15,55 @@ class Encryption:
 	def __init__(self, gpg_dir: Optional[str] = None):
 		self.gpg = gnupg.GPG(use_agent=True, gnupghome=gpg_dir)
 		self.gpg.encoding = 'utf-8'
-	def gen_key(self,
-		user: User,
-		passphrase: Optional[str] = None,
-		*,
-		never_expire: bool = False
-	) -> bytes:
+	
+	def get_user_key_uid(self, user: User) -> Tuple[str, str]:
 		"""
-		Generates a key for use with Subtext.
+		Return key "name" and "email" for the given user.
 		"""
 		if user.name is None:
 			user.refresh()
 		
+		return (
+			'{}@{}'.format(user.name, user.ctx.instance_name),
+			'{}@{}'.format(user.id, user.ctx.instance_id)
+		)
+	
+	def get_user_keys(self, user: User) -> List[str]:
+		"""
+		Get keys for the given user.
+		"""
+		name, email = self.get_user_key_uid(user)
+	
+	def gen_key(self,
+		user: User,
+		passphrase: Optional[str] = None,
+		*,
+		expire_years: int = 5
+	) -> bytes:
+		"""
+		Generate a key for use with Subtext.
+		"""
+		name, email = self.get_user_key_uid(user)
+		
 		key = self.gpg.gen_key(self.gpg.gen_key_input(
+			# RSA-2048 for signing and RSA-3072 for encryption
+			# provides good security while reducing message size
 			key_type='RSA',
-			key_length=3072,
+			key_length=2048,
 			key_usage='sign',
 			subkey_type='RSA',
 			subkey_length=3072,
 			subkey_usage='encrypt',
-			name_real=user.name,
+			
+			name_real=name,
 			name_comment='Subtext',
-			name_email='{0}@{1}'.format(user.id, user.ctx.instance_name),
-			expire_date=(0 if never_expire else "5y"),
+			name_email=email,
+			expire_date=(0 if expire_years <= 0 else "{}y".format(expire_years)),
 			passphrase=passphrase
 		))
 		
 		return self.gpg.export_keys([key.fingerprint], armor=False)
+	
 	def encrypt(self,
 		data: bytes,
 		recipients: List[User],
@@ -51,7 +73,7 @@ class Encryption:
 		compress: bool = False
 	) -> bytes:
 		"""
-		Encrypts and signs some data.
+		Encrypt and sign some data.
 		"""
 		crypt = self.gpg.encrypt(
 			data,
@@ -63,12 +85,13 @@ class Encryption:
 			extra_args=(['-z', '0'] if not compress else None)
 		)
 		return crypt.data
+	
 	def decrypt(self,
 		data: bytes,
 		passphrase: Optional[str] = None
 	) -> Tuple[bytes, bool]:
 		"""
-		Decrypts and verifies some data.
+		Decrypt and verify some data.
 		"""
 		crypt = self.gpg.decrypt(
 			data,

@@ -22,7 +22,9 @@ class Context:
 		self._session_id = session_id
 		self._user_id = user_id
 		
-		self.instance_name = self.get('/Subtext').json()['serverName']
+		resp = self.get('/Subtext').json()
+		self.instance_name = resp['instanceName']
+		self.instance_id = UUID(resp['instanceId'])
 	def session_id(self):
 		"""
 		Retrieve the associated session ID, or raise a ContextError if there is none.
