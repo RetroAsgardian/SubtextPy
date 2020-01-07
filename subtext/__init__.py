@@ -28,6 +28,7 @@ class Client:
 			raise ValueError("Could not detect a valid Subtext instance at {}".format(self.ctx.url))
 		
 		self.instance_name = self.ctx.instance_name
+		self.instance_id = self.ctx.instance_id
 	
 	def login(self, user: Union[UUID, str], password: str):
 		"""

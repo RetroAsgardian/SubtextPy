@@ -6,15 +6,29 @@ import gnupg
 
 from .user import User
 
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 
 class Encryption:
 	"""
 	Provides encryption functionality for Subtext.
 	"""
-	def __init__(self, gpg_dir: Optional[str] = None):
+	def __init__(self, my_key: Optional[Union[User, str]] = None, *, gpg_dir: Optional[str] = None):
 		self.gpg = gnupg.GPG(use_agent=True, gnupghome=gpg_dir)
 		self.gpg.encoding = 'utf-8'
+		
+		self.my_key = None
+		if my_key is not None:
+			self.change_my_key(my_key)
+	
+	def change_my_key(self, my_key: Union[User, str]):
+		"""
+		Change the key used for signing and decryption.
+		If a User is given, GnuPG will automatically select the best key for that user.
+		"""
+		if isinstance(my_key, User):
+			self.my_key = self.get_user_key_uid(my_key)[1]
+		else:
+			self.my_key = my_key
 	
 	def get_user_key_uid(self, user: User) -> Tuple[str, str]:
 		"""
@@ -30,16 +44,21 @@ class Encryption:
 	
 	def get_user_keys(self, user: User) -> List[str]:
 		"""
-		Get keys for the given user.
+		Get a list of key fingerprints for the given user, sorted with most recent key first.
 		"""
 		name, email = self.get_user_key_uid(user)
+		keys = self.gpg.list_keys(keys=[name, email])
+		
+		keys.sort(key=(lambda key: -int(key['date'])))
+		
+		return [key['fingerprint'] for key in keys]
 	
 	def gen_key(self,
 		user: User,
 		passphrase: Optional[str] = None,
 		*,
 		expire_years: int = 5
-	) -> bytes:
+	) -> str:
 		"""
 		Generate a key for use with Subtext.
 		"""
@@ -62,12 +81,11 @@ class Encryption:
 			passphrase=passphrase
 		))
 		
-		return self.gpg.export_keys([key.fingerprint], armor=False)
+		return key.fingerprint
 	
 	def encrypt(self,
 		data: bytes,
-		recipients: List[User],
-		sender: User,
+		recipients: List[Union[User, str]],
 		passphrase: Optional[str] = None,
 		*,
 		compress: bool = False
@@ -75,10 +93,17 @@ class Encryption:
 		"""
 		Encrypt and sign some data.
 		"""
+		recipient_keys = []
+		for x in recipients:
+			if isinstance(x, User):
+				recipient_keys.append(self.get_user_key_uid(x)[1])
+			else:
+				recipient_keys.append(x)
+		
 		crypt = self.gpg.encrypt(
 			data,
-			["{0}@{1}".format(user.id, user.ctx.instance_name) for user in recipients],
-			sign="{0}@{1}".format(sender.id, sender.ctx.instance_name),
+			recipient_keys,
+			sign=self.my_key,
 			passphrase=passphrase,
 			always_trust=True,
 			armor=False,
