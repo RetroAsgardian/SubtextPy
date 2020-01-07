@@ -92,7 +92,7 @@ class Board(SubtextObj):
 			'sessionId': self.ctx.session_id(),
 			'userId': user.id
 		})
-	def get_messages(self, *, type: Optional[str] = None, only_system: bool = False, page_size: Optional[int] = None):
+	def get_messages(self, *, type: Optional[str] = None, only_system: bool = False, since_time: Optional[datetime] = None, page_size: Optional[int] = None):
 		"""
 		Retrieve this board's messages. (This is an iterator.)
 		"""
@@ -104,7 +104,8 @@ class Board(SubtextObj):
 				'start': start,
 				'count': page_size,
 				'type': type,
-				'onlySystem': only_system
+				'onlySystem': only_system,
+				'sinceTime': since_time
 			}).json()
 			start += len(resp)
 			if len(resp) <= 0:
