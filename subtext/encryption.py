@@ -2,7 +2,7 @@
 """
 subtext.encryption
 """
-import gnupg
+import gnupg, subprocess
 
 from .user import User
 
@@ -53,12 +53,7 @@ class Encryption:
 		
 		return [key['fingerprint'] for key in keys]
 	
-	def gen_key(self,
-		user: User,
-		passphrase: Optional[str] = None,
-		*,
-		expire_years: int = 5
-	) -> str:
+	def gen_key(self, user: User, *, expire_years: int = 5) -> str:
 		"""
 		Generate a key for use with Subtext.
 		"""
@@ -78,15 +73,43 @@ class Encryption:
 			name_comment='Subtext',
 			name_email=email,
 			expire_date=(0 if expire_years <= 0 else "{}y".format(expire_years)),
-			passphrase=passphrase
 		))
 		
 		return key.fingerprint
 	
+	def sign_key(self, key_fp: str):
+		"""
+		Sign the key. You should ONLY do this after verifying that it belongs to the correct person.
+		To verify a key, contact the owner in person or over the phone, and compare the key's fingerprint
+		to the owner's copy's fingerprint.
+		"""
+		cmd = ['gpg', '--batch', '--yes', '-u', self.my_key, '--sign-key', key_fp]
+		subprocess.run(cmd, check=False)
+	
+	def trust_key_owner(self, key_fp: str, *, untrust: bool = False, full_trust: bool = False):
+		"""
+		Set the key's owner's trust level. This represents how much you trust them to correctly verify
+		other keys before signing them.
+		
+		Without any additional parameters, the owner will be given marginal trust. Three signatures from
+		marginally trusted users will validate a key. This is a good choice for most of your friends.
+		
+		If untrust is set to True, the owner will have all trust removed. This should be used for people
+		who have a habit of signing keys without verifying them first, or for people you don't know.
+		
+		If full_trust is set to True, the owner will be given full trust. One signature from a fully
+		trusted user will validate a key, so assign this level of trust with care.
+		"""
+		if not untrust and not full_trust:
+			self.gpg.trust_keys([key_fp], 'TRUST_MARGINAL')
+		elif untrust:
+			self.gpg.trust_keys([key_fp], 'TRUST_NEVER')
+		elif full_trust:
+			self.gpg.trust_keys([key_fp], 'TRUST_FULL')
+	
 	def encrypt(self,
 		data: bytes,
 		recipients: List[Union[User, str]],
-		passphrase: Optional[str] = None,
 		*,
 		compress: bool = False
 	) -> bytes:
@@ -104,7 +127,6 @@ class Encryption:
 			data,
 			recipient_keys,
 			sign=self.my_key,
-			passphrase=passphrase,
 			always_trust=True,
 			armor=False,
 			extra_args=(['-z', '0'] if not compress else None)
@@ -112,15 +134,13 @@ class Encryption:
 		return crypt.data
 	
 	def decrypt(self,
-		data: bytes,
-		passphrase: Optional[str] = None
+		data: bytes
 	) -> Tuple[bytes, bool]:
 		"""
 		Decrypt and verify some data.
 		"""
 		crypt = self.gpg.decrypt(
 			data,
-			passphrase=passphrase,
 			always_trust=True
 		)
 		return (crypt.data, crypt.trust_level is not None and crypt.trust_level >= crypt.TRUST_FULLY)
