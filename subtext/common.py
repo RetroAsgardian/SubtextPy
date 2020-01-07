@@ -59,27 +59,27 @@ class Context:
 		"""
 		Send an HTTP GET request.
 		"""
-		return self._request('GET', url, **kwargs)
+		return self.request('GET', url, **kwargs)
 	def post(self, url: str, **kwargs):
 		"""
 		Send an HTTP POST request.
 		"""
-		return self._request('POST', url, **kwargs)
+		return self.request('POST', url, **kwargs)
 	def put(self, url: str, **kwargs):
 		"""
 		Send an HTTP PUT request.
 		"""
-		return self._request('PUT', url, **kwargs)
+		return self.request('PUT', url, **kwargs)
 	def patch(self, url: str, **kwargs):
 		"""
 		Send an HTTP PATCH request.
 		"""
-		return self._request('PATCH', url, **kwargs)
+		return self.request('PATCH', url, **kwargs)
 	def delete(self, url: str, **kwargs):
 		"""
 		Send an HTTP DELETE request.
 		"""
-		return self._request('DELETE', url, **kwargs)
+		return self.request('DELETE', url, **kwargs)
 
 class SubtextObj:
 	"""
