@@ -9,6 +9,8 @@ from .key import Key
 from .board import Board, BoardEncryption, Message
 from .encryption import Encryption
 
+from . import content
+
 from uuid import UUID
 from datetime import datetime
 import iso8601

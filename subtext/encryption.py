@@ -117,6 +117,36 @@ class Encryption:
 		elif full_trust:
 			self.gpg.trust_keys([key_fp], 'TRUST_FULL')
 	
+	def export_key(self, keys: List[Union[User, str]]) -> bytes:
+		"""
+		Export a key in binary format.
+		"""
+		key_ids = []
+		for x in keys:
+			if isinstance(x, User):
+				y.append(self.get_user_key_uid(x)[1])
+			else:
+				y.append(x)
+		return self.gpg.export_key(key_ids, armor=False)
+	
+	def export_secret_key(self, keys: str) -> bytes:
+		"""
+		Export a secret key in binary format.
+		"""
+		key_ids = []
+		for x in keys:
+			if isinstance(x, User):
+				y.append(self.get_user_key_uid(x)[1])
+			else:
+				y.append(x)
+		return self.gpg.export_key(key_ids, True, armor=False, expect_passphrase=False)
+	
+	def import_key(self, key_data: bytes):
+		"""
+		Import key data.
+		"""
+		
+	
 	def encrypt(self,
 		data: bytes,
 		recipients: List[Union[User, str]],

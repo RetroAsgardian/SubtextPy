@@ -11,11 +11,6 @@ import json
 
 from typing import Optional
 
-# HEADER
-class Key(SubtextObj): pass
-
-from .user import User
-
 class Key(SubtextObj):
 	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,
 		publish_time: Optional[datetime] = None

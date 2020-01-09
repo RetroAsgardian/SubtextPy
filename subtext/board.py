@@ -132,6 +132,19 @@ class Board(SubtextObj):
 			'isSystem': is_system,
 			'type': type or "Message"
 		}, data=content)
+	@classmethod
+	def direct(cls, user: User):
+		"""
+		Get the direct message board for communicating with the given user.
+		If it doesn't already exist, it will be created.
+		"""
+		resp = user.ctx.post("/Subtext/board/createdirect", params={
+			'sessionId': user.ctx.session_id(),
+			'recipientId': user.id
+		}).json()
+		board = cls(UUID(resp), ctx=user.ctx)
+		board.refresh()
+		return board
 
 class Message(SubtextObj):
 	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,

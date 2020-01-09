@@ -43,15 +43,23 @@ def main():
 	
 	print("Messages in #{}:".format(board.name))
 	for msg in board.get_messages():
-		print("({}) @{}, {}:".format(msg.type, msg.author.id, msg.timestamp))
+		print("[{}] @{}, {}:".format(msg.type, msg.author.id, msg.timestamp))
 		if msg.content is None:
 			msg.refresh()
 		
 		i = 0
-		print("\t", end="")
-		for byte in msg.content:
-			print("{:x}".format(byte), end="\n\t" if i % 16 == 0 else " ")
-			i += 1
+		for i in range(0, len(msg.content), 16):
+			chunk = msg.content[i:i+16]
+			print("0x{:08x}\t".format(i), end="")
+			for byte in chunk:
+				print("{:02x}".format(byte), end=" ")
+			print(("\x1b[90m..\x1b[0m " * (16 - len(chunk))) + "\t", end="")
+			for byte in chunk:
+				if byte >= 0x20 and byte <= 0x7e:
+					print(chr(byte), end="")
+				else:
+					print("\x1b[90m.\x1b[0m", end="")
+			print("\x1b[90m.\x1b[0m" * (16 - len(chunk)))
 		print()
 	
 	client.logout()
