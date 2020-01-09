@@ -171,8 +171,7 @@ class User(SubtextObj):
 				if key['id'] not in ids:
 					ids.add(key['id'])
 					yield Key(UUID(key['id']), self.ctx,
-						publish_time=iso8601.parse_date(key['publishTime']),
-						owner=self
+						publish_time=iso8601.parse_date(key['publishTime'])
 					)
 	
 	def add_key(self, data: bytes):

@@ -46,8 +46,6 @@ def main():
 		print("({}) @{}, {}:".format(msg.type, msg.author.id, msg.timestamp))
 		if msg.content is None:
 			msg.refresh()
-		else:
-			print(msg.content)
 		
 		i = 0
 		print("\t", end="")
