@@ -11,12 +11,7 @@ import iso8601
 from enum import Enum
 from typing import Optional
 
-# HEADER
-class UserPresence(Enum): pass
-class User(SubtextObj): pass
-
 from .key import Key
-from . import board
 
 class UserPresence(Enum):
 	online = "Online"
@@ -198,15 +193,3 @@ class User(SubtextObj):
 			'untilTime': until_time,
 			'otherData': other_data
 		})
-	
-	def get_direct_board(self) -> board.Board:
-		"""
-		Retrieve the direct message board for this user. Creates one if it doesn't exist.
-		"""
-		resp = self.ctx.post("/Subtext/board/createdirect", params={
-			'sessionId': self.ctx.session_id(),
-			'recipientId': self.id
-		})
-		board = board.Board(UUID(resp.json()), self.ctx)
-		board.refresh()
-		return board

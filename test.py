@@ -28,16 +28,33 @@ def main():
 	
 	print("Boards:")
 	for board in client.get_boards():
-		print("- {} ({})".format(board.name, board.id))
+		print("- #{} ({})".format(board.name, board.id))
 	
 	board = client.get_board(UUID(input('Enter a board ID: ')))
 	
 	print()
 	
-	print("Members:")
-	for member in board.get_members():
+	print("Members of #{}:".format(board.name))
+	for member in board.members:
 		member.refresh()
-		print("- {}@{} ({})".format(member.name, client.instance_name, member.id))
+		print("- @{} ({})".format(member.name, member.id))
+	
+	print()
+	
+	print("Messages in #{}:".format(board.name))
+	for msg in board.get_messages():
+		print("({}) @{}, {}:".format(msg.type, msg.author.id, msg.timestamp))
+		if msg.content is None:
+			msg.refresh()
+		else:
+			print(msg.content)
+		
+		i = 0
+		print("\t", end="")
+		for byte in msg.content:
+			print("{:x}".format(byte), end="\n\t" if i % 16 == 0 else " ")
+			i += 1
+		print()
 	
 	client.logout()
 

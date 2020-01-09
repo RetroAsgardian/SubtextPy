@@ -6,7 +6,7 @@ from .common import ContextError, Context, SubtextObj
 from .error import *
 from .user import User, UserPresence
 from .key import Key
-from .board import Board, BoardEncryption
+from .board import Board, BoardEncryption, Message
 from .encryption import Encryption
 
 from uuid import UUID

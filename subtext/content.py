@@ -13,6 +13,8 @@ class Content:
 	"""
 	Represents message content.
 	"""
+	def __init__(self, crypt):
+		self.crypt = crypt
 	def from_bytes(self, data: bytes):
 		"""
 		Deserialize content from raw bytes.
