@@ -16,7 +16,7 @@ class UserPresence(Enum): pass
 class User(SubtextObj): pass
 
 from .key import Key
-from .board import Board
+from . import board
 
 class UserPresence(Enum):
 	online = "Online"
@@ -199,7 +199,7 @@ class User(SubtextObj):
 			'otherData': other_data
 		})
 	
-	def get_direct_board(self) -> Board:
+	def get_direct_board(self) -> board.Board:
 		"""
 		Retrieve the direct message board for this user. Creates one if it doesn't exist.
 		"""
@@ -207,6 +207,6 @@ class User(SubtextObj):
 			'sessionId': self.ctx.session_id(),
 			'recipientId': self.id
 		})
-		board = Board(UUID(resp.json()), self.ctx)
+		board = board.Board(UUID(resp.json()), self.ctx)
 		board.refresh()
 		return board

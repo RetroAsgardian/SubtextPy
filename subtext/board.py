@@ -18,7 +18,7 @@ class BoardEncryption(Enum): pass
 class Board(SubtextObj): pass
 class Message(SubtextObj): pass
 
-from .user import User
+from . import user
 
 class BoardEncryption(Enum):
 	gnupg = "GnuPG"
@@ -28,7 +28,7 @@ class BoardEncryption(Enum):
 class Board(SubtextObj):
 	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,
 		name: Optional[str] = None,
-		owner: Optional[User] = None,
+		owner: Optional[user.User] = None,
 		encryption: Optional[BoardEncryption] = None,
 		last_update: Optional[datetime] = None,
 		last_significant_update: Optional[datetime] = None,
@@ -50,7 +50,7 @@ class Board(SubtextObj):
 		}).json()
 		
 		self.name = resp.get('name', None)
-		self.owner = User(UUID(resp['ownerId']), self.ctx) if resp.get('ownerId', None) else None
+		self.owner = user.User(UUID(resp['ownerId']), self.ctx) if resp.get('ownerId', None) else None
 		self.encryption = BoardEncryption(resp['encryption']) if resp.get('encryption', None) else None
 		
 		self.last_update = iso8601.parse_date(resp['lastUpdate']) if resp.get('lastUpdate', None) else None
@@ -75,8 +75,8 @@ class Board(SubtextObj):
 			for member_id in resp:
 				if member_id not in ids:
 					ids.add(member_id)
-					yield User(UUID(member_id), self.ctx)
-	def add_member(self, user: User):
+					yield user.User(UUID(member_id), self.ctx)
+	def add_member(self, user: user.User):
 		"""
 		Add a user to this board.
 		"""
@@ -84,7 +84,7 @@ class Board(SubtextObj):
 			'sessionId': self.ctx.session_id(),
 			'userId': user.id
 		})
-	def remove_member(self, user: User):
+	def remove_member(self, user: user.User):
 		"""
 		Remove a user from this board.
 		"""
@@ -116,7 +116,7 @@ class Board(SubtextObj):
 					yield Message(UUID(message['id']), self.ctx,
 						board=self,
 						timestamp=iso8601.parse_date(message['timestamp']),
-						author=User(UUID(message['authorId'])),
+						author=user.User(UUID(message['authorId'])),
 						is_system=message['isSystem'],
 						type=message['type'],
 						content=message['content']
@@ -135,7 +135,7 @@ class Message(SubtextObj):
 	def __init__(self, id: UUID, ctx: Optional[Context] = None, *,
 		board: Optional[Board] = None,
 		timestamp: Optional[datetime] = None,
-		author: Optional[User] = None,
+		author: Optional[user.User] = None,
 		is_system: Optional[bool] = None,
 		type: Optional[str] = None,
 		content: Optional[Content] = None
@@ -159,7 +159,7 @@ class Message(SubtextObj):
 		if 'X-Metadata' in resp.headers:
 			metadata = json.loads(resp.headers['X-Metadata'])
 			self.timestamp = iso8601.parse_date(metadata['timestamp'])
-			self.author = User(UUID(metadata['authorId']))
+			self.author = user.User(UUID(metadata['authorId']))
 			self.is_system = metadata['isSystem']
 			self.type = metadata['type']
 		

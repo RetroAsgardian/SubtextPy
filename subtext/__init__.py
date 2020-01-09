@@ -98,7 +98,7 @@ class Client:
 					ids.add(board['id'])
 					yield Board(UUID(board['id']), self.ctx,
 						name=board['name'],
-						owner=User(UUID(board['owner'])),
+						owner=User(UUID(board['ownerId'])),
 						encryption=BoardEncryption(board['encryption']),
 						last_update=iso8601.parse_date(board['lastUpdate']),
 						last_significant_update=iso8601.parse_date(board['lastSignificantUpdate']),

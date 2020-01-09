@@ -12,7 +12,7 @@ def main():
 	client.login('testing', 'password')
 	user = client.get_user()
 	
-	print("Logged in as {}@{}".format(user.name, client.instance_name))
+	print("Logged in as {}@{} ({}@{})".format(user.name, client.instance_name, user.id, client.instance_id))
 	
 	crypt = subtext.Encryption(user)
 	
@@ -22,10 +22,22 @@ def main():
 	else:
 		fp = crypt.get_user_keys(user)[0]
 	
-	print("Key fingerprint: {}".format(fp))
+	print("Key FP: {}".format(fp))
+	
 	print()
-	print("Key info:")
-	print(repr(crypt.get_key_info(fp)))
+	
+	print("Boards:")
+	for board in client.get_boards():
+		print("- {} ({})".format(board.name, board.id))
+	
+	board = client.get_board(UUID(input('Enter a board ID: ')))
+	
+	print()
+	
+	print("Members:")
+	for member in board.get_members():
+		member.refresh()
+		print("- {}@{} ({})".format(member.name, client.instance_name, member.id))
 	
 	client.logout()
 
