@@ -20,6 +20,30 @@ class Encryption:
 		if my_key is not None:
 			self.change_my_key(my_key)
 	
+	def gen_key(self, user: User, *, expire_years: int = 5) -> str:
+		"""
+		Generate a key for use with Subtext.
+		"""
+		name, email = self.get_user_key_uid(user)
+		
+		key = self.gpg.gen_key(self.gpg.gen_key_input(
+			# RSA-2048 for signing and RSA-3072 for encryption
+			# provides good security while reducing message size
+			key_type='RSA',
+			key_length=2048,
+			key_usage='sign',
+			subkey_type='RSA',
+			subkey_length=3072,
+			subkey_usage='encrypt',
+			
+			name_real=name,
+			name_comment='Subtext',
+			name_email=email,
+			expire_date=(0 if expire_years <= 0 else "{}y".format(expire_years)),
+		))
+		
+		return key.fingerprint
+	
 	def change_my_key(self, my_key: Union[User, str]):
 		"""
 		Change the key used for signing and decryption.
@@ -44,38 +68,24 @@ class Encryption:
 	
 	def get_user_keys(self, user: User) -> List[str]:
 		"""
-		Get a list of key fingerprints for the given user, sorted with most recent key first.
+		Return a list of key fingerprints for the given user, sorted with most recent key first.
 		"""
 		name, email = self.get_user_key_uid(user)
 		keys = self.gpg.list_keys(keys=[name, email])
 		
-		keys.sort(key=(lambda key: -int(key['date'])))
+		keys.sort(key=(lambda key: (
+			0 if key['trust'] == 'u' else 1 if key['trust'] == 'f' else 2 if key['trust'] == 'm' else 3,
+			-int(key['date'])
+		)))
 		
 		return [key['fingerprint'] for key in keys]
 	
-	def gen_key(self, user: User, *, expire_years: int = 5) -> str:
+	def get_key_info(self, key_fp: str):
 		"""
-		Generate a key for use with Subtext.
+		Get information about the given key.
 		"""
-		name, email = self.get_user_key_uid(user)
-		
-		key = self.gpg.gen_key(self.gpg.gen_key_input(
-			# RSA-2048 for signing and RSA-3072 for encryption
-			# provides good security while reducing message size
-			key_type='RSA',
-			key_length=2048,
-			key_usage='sign',
-			subkey_type='RSA',
-			subkey_length=3072,
-			subkey_usage='encrypt',
-			
-			name_real=name,
-			name_comment='Subtext',
-			name_email=email,
-			expire_date=(0 if expire_years <= 0 else "{}y".format(expire_years)),
-		))
-		
-		return key.fingerprint
+		keys = self.gpg.list_keys(keys=key_fp)
+		return keys[0]
 	
 	def sign_key(self, key_fp: str):
 		"""
