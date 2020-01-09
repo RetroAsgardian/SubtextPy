@@ -117,35 +117,35 @@ class Encryption:
 		elif full_trust:
 			self.gpg.trust_keys([key_fp], 'TRUST_FULL')
 	
-	def export_key(self, keys: List[Union[User, str]]) -> bytes:
+	def export_keys(self, keys: List[Union[User, str]]) -> bytes:
 		"""
-		Export a key in binary format.
-		"""
-		key_ids = []
-		for x in keys:
-			if isinstance(x, User):
-				y.append(self.get_user_key_uid(x)[1])
-			else:
-				y.append(x)
-		return self.gpg.export_key(key_ids, armor=False)
-	
-	def export_secret_key(self, keys: str) -> bytes:
-		"""
-		Export a secret key in binary format.
+		Export keys in binary format.
 		"""
 		key_ids = []
 		for x in keys:
 			if isinstance(x, User):
-				y.append(self.get_user_key_uid(x)[1])
+				key_ids.append(self.get_user_key_uid(x)[1])
 			else:
-				y.append(x)
-		return self.gpg.export_key(key_ids, True, armor=False, expect_passphrase=False)
+				key_ids.append(x)
+		return self.gpg.export_keys(key_ids, armor=False)
 	
-	def import_key(self, key_data: bytes):
+	def export_secret_keys(self, keys: List[Union[User, str]]) -> bytes:
+		"""
+		Export secret keys in binary format.
+		"""
+		key_ids = []
+		for x in keys:
+			if isinstance(x, User):
+				key_ids.append(self.get_user_key_uid(x)[1])
+			else:
+				key_ids.append(x)
+		return self.gpg.export_keys(key_ids, True, armor=False, expect_passphrase=False)
+	
+	def import_keys(self, key_data: bytes):
 		"""
 		Import key data.
 		"""
-		
+		self.gpg.import_keys(key_data)
 	
 	def encrypt(self,
 		data: bytes,
