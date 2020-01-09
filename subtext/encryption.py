@@ -93,8 +93,7 @@ class Encryption:
 		To verify a key, contact the owner in person or over the phone, and compare the key's fingerprint
 		to the owner's copy's fingerprint.
 		"""
-		cmd = ['gpg', '--batch', '--yes', '-u', self.my_key, '--sign-key', key_fp]
-		subprocess.run(cmd, check=False)
+		subprocess.run(['gpg', '--batch', '--yes', '-u', self.my_key, '--sign-key', key_fp], check=False)
 	
 	def trust_key_owner(self, key_fp: str, *, untrust: bool = False, full_trust: bool = False):
 		"""
@@ -179,8 +178,5 @@ class Encryption:
 		"""
 		Decrypt and verify some data.
 		"""
-		crypt = self.gpg.decrypt(
-			data,
-			always_trust=True
-		)
+		crypt = self.gpg.decrypt(data)
 		return (crypt.data, crypt.trust_level is not None and crypt.trust_level >= crypt.TRUST_FULLY)
