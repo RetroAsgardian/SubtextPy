@@ -174,7 +174,7 @@ class Message(SubtextObj):
 		if 'X-Metadata' in resp.headers:
 			metadata = json.loads(resp.headers['X-Metadata'])
 			self.timestamp = iso8601.parse_date(metadata['timestamp'])
-			self.author = user.User(UUID(metadata['authorId']))
+			self.author = User(UUID(metadata['authorId']))
 			self.is_system = metadata['isSystem']
 			self.type = metadata['type']
 		
