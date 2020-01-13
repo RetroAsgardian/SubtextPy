@@ -48,7 +48,10 @@ class Context:
 		"""
 		Send an HTTP request.
 		"""
-		resp = requests.request(method, self.url + url, **kwargs)
+		if 'data' in kwargs:
+			resp = requests.request(method, self.url + url, **kwargs, headers={'Content-Type': 'application/octet-stream'})
+		else:
+			resp = requests.request(method, self.url + url, **kwargs)
 		
 		# Handle error
 		if resp.status_code // 100 != 2:
