@@ -42,17 +42,31 @@ class Client:
 		if isinstance(user, UUID):
 			user_id = user
 		else:
-			user_id = self.ctx.get('/Subtext/user/queryidbyname', params={
+			user_id = UUID(self.ctx.get('/Subtext/user/queryidbyname', params={
 				'name': user
-			}).json()
+			}).json())
 		
 		session_id = self.ctx.post('/Subtext/user/login', params={
 			'userId': user_id,
 			'password': password
 		}).json()
 		
-		self.ctx._session_id = session_id
+		self.ctx._session_id = UUID(session_id)
 		self.ctx._user_id = user_id
+	
+	def create_user(self, username: str, password: str, public_key: bytes = b'\x00') -> UUID:
+		"""
+		Create a new user account.
+		"""
+		if self.ctx._session_id is not None or self.ctx._user_id is not None:
+			raise ContextError("Context is already associated with a session, try logging out")
+		
+		resp = self.ctx.post('/Subtext/user/create', params={
+			'name': username,
+			'password': password
+		}, data=public_key).json()
+		
+		return UUID(resp)
 	
 	def heartbeat(self):
 		"""
