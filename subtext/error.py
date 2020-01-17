@@ -20,6 +20,11 @@ class APIError(Exception):
 		self.message = message
 		self.status_code = status_code
 		self.__dict__.update({_snake_case(key): data[key] for key in data})
+	def __str__(self):
+		x = self.__dict__.copy()
+		x.pop('message')
+		x.pop('status_code')
+		return "({}, {}, {})".format(self.message, self.status_code, repr(x))
 
 class AuthError(APIError):
 	"""
